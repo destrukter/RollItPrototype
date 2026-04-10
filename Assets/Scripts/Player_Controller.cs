@@ -178,6 +178,7 @@ public class Player_Controller : MonoBehaviour
             return;
 
         play_state = PlayState.playBalls;
+        TriggerPlayEvent();
 
         if (playPile.Count == 0)
         {
@@ -186,6 +187,14 @@ public class Player_Controller : MonoBehaviour
         }
 
         StartCoroutine(SpawnPlayBallsRoutine());
+    }
+
+    private void TriggerPlayEvent()
+    {
+        if (Events.current == null)
+            return;
+
+        Events.current.PlayTriggered();
     }
 
     private IEnumerator SpawnPlayBallsRoutine()

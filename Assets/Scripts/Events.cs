@@ -18,9 +18,15 @@ public class Events : MonoBehaviour
     }
 
     public event Action<Ball> OnBallClicked;
+    public event Action OnPlayTriggered;
 
     public void BallClicked(Ball ball)
     {
         OnBallClicked?.Invoke(ball);
+    }
+
+    public void PlayTriggered()
+    {
+        OnPlayTriggered?.Invoke();
     }
 }
