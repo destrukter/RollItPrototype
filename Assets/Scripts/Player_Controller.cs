@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine.InputSystem;
+using UnityEngine.Timeline;
 
 public class Player_Controller : MonoBehaviour
 {
@@ -26,6 +27,7 @@ public class Player_Controller : MonoBehaviour
     [SerializeField] int hand_size = 5;
     [SerializeField] int play_size = 3;
     [SerializeField] float playSpawnDelaySeconds = 0.15f;
+    [SerializeField] float pileRandomOffsetXZ = 0.12f;
 
     int totalPoints = 0;
     bool isSpawningPlayBalls = false;
@@ -289,7 +291,10 @@ public class Player_Controller : MonoBehaviour
         }
 
         float stackOffset = parent.position.y * (pileStackOffset * stackIndex) + 10;
-        ball.transform.position = new Vector3(parent.position.x, stackOffset, parent.position.z);
+        float randomOffsetX = Random.Range(-pileRandomOffsetXZ, pileRandomOffsetXZ);
+        float randomOffsetZ = Random.Range(-pileRandomOffsetXZ, pileRandomOffsetXZ);
+        ball.transform.position = new Vector3(parent.position.x + randomOffsetX, stackOffset, parent.position.z + randomOffsetZ);
+        //ball.transform.position = new Vector3(parent.position.x, stackOffset, parent.position.z);
 
         ball.transform.rotation = parent.rotation;
 
