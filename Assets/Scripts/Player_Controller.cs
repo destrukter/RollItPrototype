@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -24,8 +25,10 @@ public class Player_Controller : MonoBehaviour
     [SerializeField] int num_draw = 3;
     [SerializeField] int hand_size = 5;
     [SerializeField] int play_size = 3;
+    [SerializeField] float playSpawnDelaySeconds = 0.15f;
 
     int totalPoints = 0;
+    bool isSpawningPlayBalls = false;
 
     public enum PlayState { drawBalls, selectBalls, playBalls, postRound }
     PlayState play_state = PlayState.postRound;
@@ -55,7 +58,7 @@ public class Player_Controller : MonoBehaviour
         {
             PlayBalls();
         }
-        else if (play_state == PlayState.playBalls && IsConfirmPressed())
+        else if (play_state == PlayState.playBalls && !isSpawningPlayBalls && IsConfirmPressed())
         {
             PostRound();
         }
@@ -180,17 +183,26 @@ public class Player_Controller : MonoBehaviour
             return;
         }
 
-        //int roundPoints = 0;
+        StartCoroutine(SpawnPlayBallsRoutine());
+    }
+
+    private IEnumerator SpawnPlayBallsRoutine()
+    {
+        isSpawningPlayBalls = true;
+        float spawnDelay = Mathf.Max(0f, playSpawnDelaySeconds);
+
         for (int i = playPile.Count - 1; i >= 0; i--)
         {
             Ball ball = playPile[i];
             SpawnBallForPlay(ball);
+
+            if (spawnDelay > 0f && i > 0)
+            {
+                yield return new WaitForSeconds(spawnDelay);
+            }
         }
 
-        //totalPoints += roundPoints;
-        //Debug.Log($"Round points: {roundPoints}. Total points: {totalPoints}");
-
-        //UpdatePileCounters();
+        isSpawningPlayBalls = false;
     }
 
     void PostRound()
