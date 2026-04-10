@@ -21,13 +21,13 @@ public class Player_Controller : MonoBehaviour
     List<Ball> playPile = new List<Ball>();
     List<Ball> discardPile = new List<Ball>();
 
-    float pileStackOffset = 0.2f;
+    float pileStackOffset = 0.02f;
 
     [SerializeField] int num_draw = 3;
     [SerializeField] int hand_size = 5;
     [SerializeField] int play_size = 3;
     [SerializeField] float playSpawnDelaySeconds = 0.15f;
-    [SerializeField] float pileRandomOffsetXZ = 0.12f;
+    [SerializeField] float pileRandomOffsetXZ = 0.01f;
 
     int totalPoints = 0;
     bool isSpawningPlayBalls = false;
@@ -291,8 +291,14 @@ public class Player_Controller : MonoBehaviour
         Rigidbody rb = ball.GetComponent<Rigidbody>();
         if (rb != null)
         {
-            float randomAngle = Random.Range(-25f, 25f);
-            Vector3 direction = Quaternion.AngleAxis(randomAngle, playOrigin.up) * playOrigin.forward;
+            float randomYaw = Random.Range(-25f, 25f);   // left/right
+            float randomPitch = Random.Range(-15f, 15f); // up/down
+
+            Quaternion yawRotation = Quaternion.AngleAxis(randomYaw, playOrigin.up);
+            Quaternion pitchRotation = Quaternion.AngleAxis(randomPitch, playOrigin.right);
+
+            Vector3 direction = yawRotation * pitchRotation * playOrigin.forward;
+
             rb.linearVelocity = direction.normalized * ball.GetLaunchVelocity();
         }
     }
@@ -317,7 +323,7 @@ public class Player_Controller : MonoBehaviour
             }
         }
 
-        float stackOffset = parent.position.y * (pileStackOffset * stackIndex) + 10;
+        float stackOffset = parent.position.y * (pileStackOffset * stackIndex) + 5f;
         float randomOffsetX = Random.Range(-pileRandomOffsetXZ, pileRandomOffsetXZ);
         float randomOffsetZ = Random.Range(-pileRandomOffsetXZ, pileRandomOffsetXZ);
         ball.transform.position = new Vector3(parent.position.x + randomOffsetX, stackOffset, parent.position.z + randomOffsetZ);

@@ -28,8 +28,8 @@ public class Ball : MonoBehaviour
         else
         {
             runtimeName = "Standard";
-            runtimeSize = 1f;
-            runtimeWeight = 1f;
+            runtimeSize = 0.1f;
+            runtimeWeight = 0.01f;
             runtimePoints = 1;
             runtimeLaunchVelocity = 50f;
         }

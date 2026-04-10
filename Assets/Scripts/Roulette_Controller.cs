@@ -3,9 +3,9 @@ using System.Collections;
 
 public class Roulette_Controller : MonoBehaviour
 {
-    [SerializeField] float spinDurationSeconds = 2.8f;
-    [SerializeField] float spinForceMin = 260f;
-    [SerializeField] float spinForceMax = 420f;
+    [SerializeField] float spinDurationSeconds = 70f;
+    [SerializeField] float spinForceMin = 5000f;
+    [SerializeField] float spinForceMax = 15000f;
 
     [SerializeField] GameObject roulettePart1;
     [SerializeField] GameObject roulettePart2;
@@ -95,9 +95,9 @@ public class Roulette_Controller : MonoBehaviour
 
     private IEnumerator SpinRoutine(float spinForce)
     {
-        float duration = Mathf.Max(0.1f, spinDurationSeconds);
-        float randomDirection = Random.value > 0.5f ? 1f : -1f;
-        float startingSpeed = Mathf.Abs(spinForce) * randomDirection;
+        float duration = Mathf.Max(4f, spinDurationSeconds);
+
+        float startingSpeed = Mathf.Abs(spinForce);
 
         float elapsed = 0f;
         float accumulatedDegrees = 0f;
@@ -110,8 +110,8 @@ public class Roulette_Controller : MonoBehaviour
             float t = Mathf.Clamp01(elapsed / duration);
             float currentSpeed = Mathf.Lerp(startingSpeed, 0f, t);
             accumulatedDegrees += currentSpeed * Time.deltaTime;
-            roulettePart1.transform.localRotation = startRotation1 * Quaternion.Euler(0f, accumulatedDegrees, 0f);
-            roulettePart2.transform.localRotation = startRotation2 * Quaternion.Euler(0f, accumulatedDegrees, 0f);
+            roulettePart1.transform.localRotation = startRotation1 * Quaternion.Euler(0f, 0f, accumulatedDegrees);
+            //roulettePart2.transform.localRotation = startRotation2 * Quaternion.Euler(0f, 0f, accumulatedDegrees);
             yield return null;
         }
 
