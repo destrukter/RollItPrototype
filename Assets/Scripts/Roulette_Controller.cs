@@ -8,21 +8,45 @@ public class Roulette_Controller : MonoBehaviour
     [SerializeField] float spinForceMax = 420f;
 
     Coroutine spinRoutine;
+    bool isSubscribedToPlay;
 
     private void OnEnable()
     {
-        if (Events.current != null)
-        {
-            Events.current.OnPlayTriggered += OnPlayTriggered;
-        }
+        TrySubscribeToEvents();
+    }
+
+    private void Start()
+    {
+        // Fallback subscription when Events.current is initialized after this component enables.
+        TrySubscribeToEvents();
     }
 
     private void OnDisable()
     {
-        if (Events.current != null)
-        {
-            Events.current.OnPlayTriggered -= OnPlayTriggered;
-        }
+        UnsubscribeFromEvents();
+    }
+
+    private void OnDestroy()
+    {
+        UnsubscribeFromEvents();
+    }
+
+    private void TrySubscribeToEvents()
+    {
+        if (isSubscribedToPlay || Events.current == null)
+            return;
+
+        Events.current.OnPlayTriggered += OnPlayTriggered;
+        isSubscribedToPlay = true;
+    }
+
+    private void UnsubscribeFromEvents()
+    {
+        if (!isSubscribedToPlay || Events.current == null)
+            return;
+
+        Events.current.OnPlayTriggered -= OnPlayTriggered;
+        isSubscribedToPlay = false;
     }
 
     private void OnPlayTriggered()
@@ -46,7 +70,7 @@ public class Roulette_Controller : MonoBehaviour
 
         float elapsed = 0f;
         float accumulatedDegrees = 0f;
-        Quaternion startRotation = transform.rotation;
+        Quaternion startRotation = transform.localRotation;
 
         while (elapsed < duration)
         {
@@ -54,7 +78,7 @@ public class Roulette_Controller : MonoBehaviour
             float t = Mathf.Clamp01(elapsed / duration);
             float currentSpeed = Mathf.Lerp(startingSpeed, 0f, t);
             accumulatedDegrees += currentSpeed * Time.deltaTime;
-            transform.rotation = startRotation * Quaternion.Euler(0f, accumulatedDegrees, 0f);
+            transform.localRotation = startRotation * Quaternion.Euler(0f, accumulatedDegrees, 0f);
             yield return null;
         }
 
