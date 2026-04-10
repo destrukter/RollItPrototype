@@ -4,6 +4,11 @@ public class Ball : MonoBehaviour
 {
     [SerializeField] private BallData data;
 
+    private string runtimeName;
+    private int runtimePoints;
+    private float runtimeWeight;
+    private float runtimeSize;
+
     private bool inHand = false;
 
     public BallData Data => data;
@@ -11,10 +16,22 @@ public class Ball : MonoBehaviour
 
     public void Initialize()
     {
-        data.name = "Standard";
-        data.size = 1;
-        data.weight = 1;
-        data.points = 1;
+        if (data != null)
+        {
+            runtimeName = string.IsNullOrWhiteSpace(data.ballName) ? "Standard" : data.ballName;
+            runtimeSize = data.size <= 0f ? 1f : data.size;
+            runtimeWeight = data.weight <= 0f ? 1f : data.weight;
+            runtimePoints = data.points;
+        }
+        else
+        {
+            runtimeName = "Standard";
+            runtimeSize = 1f;
+            runtimeWeight = 1f;
+            runtimePoints = 1;
+        }
+
+        inHand = false;
     }
 
     private void OnMouseDown()
@@ -32,16 +49,16 @@ public class Ball : MonoBehaviour
 
     public int GetPoints()
     {
-        return data.points;
+        return runtimePoints;
     }
 
     public float GetWeight()
     {
-        return data.weight;
+        return runtimeWeight;
     }
 
     public float GetSize()
     {
-        return data.size;
+        return runtimeSize;
     }
 }

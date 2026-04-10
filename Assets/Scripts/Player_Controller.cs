@@ -21,11 +21,13 @@ public class Player_Controller : MonoBehaviour
 
     Roulette_Controller roulette;
 
-    int num_draw = 3;
-    int hand_size = 5;
-    int play_size = 3;
+    [SerializeField] int num_draw = 3;
+    [SerializeField] int hand_size = 5;
+    [SerializeField] int play_size = 3;
 
-    enum PlayState { drawBalls, selectBalls, playBalls, postRound }
+    int totalPoints = 0;
+
+    public enum PlayState { drawBalls, selectBalls, playBalls, postRound }
     PlayState play_state = PlayState.drawBalls;
 
     private void Start()
@@ -35,6 +37,7 @@ public class Player_Controller : MonoBehaviour
             Events.current.OnBallClicked += OnBallClicked;
         }
         GenerateStartingDeck(10);
+        StartRound();
     }
 
     private void OnDestroy()
@@ -45,23 +48,57 @@ public class Player_Controller : MonoBehaviour
         }
     }
 
+    void Update()
+    {
+        //handle state changes and next button click
+        //when enter is clicked
+        //also handle shop?
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            PlayBalls();
+            PostRound();
+        }
+    }
+
     void DrawBalls()
     {
-        if (play_state == PlayState.drawBalls)
+        if (play_state != PlayState.drawBalls)
+            return;
+        int needed = Mathf.Max(0, hand_size - handPile.Count);
+        int drawCount = Mathf.Min(num_draw, needed);
+
+        if (drawCount <= 0)
         {
-            System.Random rng = new System.Random();
-
-            List<Ball> drawnBalls = drawPile
-                .OrderBy(x => rng.Next())
-                .Take(num_draw)
-                .ToList();
-
-            foreach (var ball in drawnBalls)
-            {
-                handPile.Add(ball);
-                drawPile.Remove(ball);
-            }
+            play_state = PlayState.selectBalls;
+            return;
         }
+
+        if (drawPile.Count < drawCount)
+        {
+            RefillDrawPileFromDiscard();
+        }
+        drawCount = Mathf.Min(drawCount, drawPile.Count);
+        if (drawCount <= 0)
+        {
+            play_state = PlayState.selectBalls;
+            return;
+        }
+
+        System.Random rng = new System.Random();
+        List<Ball> drawnBalls = drawPile
+            .OrderBy(x => rng.Next())
+            .Take(drawCount)
+            .ToList();
+
+        foreach (var ball in drawnBalls)
+        {
+            drawPile.Remove(ball);
+            handPile.Add(ball);
+            MoveBallToPile(ball, handPileParent, handPile.Count - 1);
+            ball.ToggleHand();
+        }
+
+        play_state = PlayState.selectBalls;
     }
 
     private void OnBallClicked(Ball ball)
@@ -76,12 +113,14 @@ public class Player_Controller : MonoBehaviour
 
             handPile.Remove(ball);
             playPile.Add(ball);
+            MoveBallToPile(ball, playPileParent, playPile.Count - 1);
             ball.ToggleHand();
         }
         else if (playPile.Contains(ball))
         {
             playPile.Remove(ball);
             handPile.Add(ball);
+            MoveBallToPile(ball, handPileParent, handPile.Count - 1);
             ball.ToggleHand();
         }
     }
@@ -101,30 +140,105 @@ public class Player_Controller : MonoBehaviour
             ball.Initialize();
 
             drawPile.Add(ball);
+            MoveBallToPile(ball, drawPileParent, i);
         }
     }
 
-    void SelectBalls()
+    public void SelectBalls()
     {
-        if (play_state == PlayState.selectBalls)
-        {
-
-        }
+        play_state = PlayState.selectBalls;
     }
 
-    void PlayBalls()
+    public void PlayBalls()
     {
-        if (play_state == PlayState.playBalls)
+        if (play_state != PlayState.selectBalls && play_state != PlayState.playBalls)
+            return;
+
+        play_state = PlayState.playBalls;
+        if (playPile.Count == 0)
+            return;
+
+        int roundPoints = 0;
+        for (int i = playPile.Count - 1; i >= 0; i--)
         {
-               
+            Ball ball = playPile[i];
+            roundPoints += ball.GetPoints();
+
+            playPile.RemoveAt(i);
+            discardPile.Add(ball);
+            MoveBallToPile(ball, discardPileParent, discardPile.Count - 1);
+            if (ball.InHand)
+            {
+                ball.ToggleHand();
+            }
         }
+
+        totalPoints += roundPoints;
+        Debug.Log($"Round points: {roundPoints}. Total points: {totalPoints}");
+        play_state = PlayState.postRound;
     }
 
     void PostRound()
     {
-        if (play_state == PlayState.postRound)
+        if (play_state != PlayState.postRound)
+            return;
+
+        for (int i = handPile.Count - 1; i >= 0; i--)
         {
 
+            Ball ball = handPile[i];
+            handPile.RemoveAt(i);
+            discardPile.Add(ball);
+            MoveBallToPile(ball, discardPileParent, discardPile.Count - 1);
+            if (ball.InHand)
+            {
+                ball.ToggleHand();
+            }
         }
+
+        StartRound();
+    }
+
+    public void StartRound()
+    {
+        play_state = PlayState.drawBalls;
+        DrawBalls();
+    }
+
+    private void MoveBallToPile(Ball ball, Transform parent, int index)
+    {
+        if (ball == null || parent == null)
+            return;
+
+        ball.transform.SetParent(parent);
+        ball.transform.localPosition = new Vector3(0f, 0f, index * 0.25f);
+        ball.transform.localRotation = Quaternion.identity;
+    }
+
+    private void RefillDrawPileFromDiscard()
+    {
+        if (discardPile.Count == 0)
+            return;
+
+        System.Random rng = new System.Random();
+        List<Ball> shuffled = discardPile.OrderBy(x => rng.Next()).ToList();
+
+        discardPile.Clear();
+        for (int i = 0; i < shuffled.Count; i++)
+        {
+            Ball ball = shuffled[i];
+            drawPile.Add(ball);
+            MoveBallToPile(ball, drawPileParent, drawPile.Count - 1);
+        }
+    }
+
+    public PlayState GetPlayState()
+    {
+        return play_state;
+    }
+
+    public void NextPlayState()
+    {
+        play_state = play_state++;
     }
 }
