@@ -244,7 +244,7 @@ public class Player_Controller : MonoBehaviour
         {
             float randomAngle = Random.Range(-25f, 25f);
             Vector3 direction = Quaternion.AngleAxis(randomAngle, playOrigin.up) * playOrigin.forward;
-            rb.velocity = direction.normalized * ball.GetLaunchVelocity();
+            rb.linearVelocity = direction.normalized * ball.GetLaunchVelocity();
         }
     }
 
@@ -254,13 +254,14 @@ public class Player_Controller : MonoBehaviour
             return;
 
         ball.transform.SetParent(parent);
-        ball.transform.position = parent.position;
+        ball.transform.position = new Vector3(parent.position.x, parent.position.y + 5, parent.position.z);
+
         ball.transform.rotation = parent.rotation;
 
         Rigidbody rb = ball.GetComponent<Rigidbody>();
         if (rb != null)
         {
-            rb.velocity = Vector3.zero;
+            rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
         }
     }
