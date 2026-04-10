@@ -19,6 +19,8 @@ public class Player_Controller : MonoBehaviour
     List<Ball> playPile = new List<Ball>();
     List<Ball> discardPile = new List<Ball>();
 
+    float pileStackOffset = 0.2f;
+
     [SerializeField] int num_draw = 3;
     [SerializeField] int hand_size = 5;
     [SerializeField] int play_size = 3;
@@ -26,7 +28,7 @@ public class Player_Controller : MonoBehaviour
     int totalPoints = 0;
 
     public enum PlayState { drawBalls, selectBalls, playBalls, postRound }
-    PlayState play_state = PlayState.drawBalls;
+    PlayState play_state = PlayState.postRound;
 
     private void Start()
     {
@@ -52,6 +54,9 @@ public class Player_Controller : MonoBehaviour
         if (play_state == PlayState.selectBalls && IsConfirmPressed())
         {
             PlayBalls();
+        }
+        else if (play_state == PlayState.playBalls && IsConfirmPressed())
+        {
             PostRound();
         }
     }
@@ -175,36 +180,40 @@ public class Player_Controller : MonoBehaviour
             return;
         }
 
-        int roundPoints = 0;
+        //int roundPoints = 0;
         for (int i = playPile.Count - 1; i >= 0; i--)
         {
             Ball ball = playPile[i];
-            roundPoints += ball.GetPoints();
-
             SpawnBallForPlay(ball);
-
-            playPile.RemoveAt(i);
-            discardPile.Add(ball);
-            MoveBallToPile(ball, discardPileParent);
-
-            if (ball.InHand)
-            {
-                ball.ToggleHand();
-            }
         }
 
-        totalPoints += roundPoints;
-        Debug.Log($"Round points: {roundPoints}. Total points: {totalPoints}");
+        //totalPoints += roundPoints;
+        //Debug.Log($"Round points: {roundPoints}. Total points: {totalPoints}");
 
-        UpdatePileCounters();
+        //UpdatePileCounters();
     }
 
     void PostRound()
     {
         if (play_state != PlayState.playBalls)
             return;
+        play_state = PlayState.postRound;
 
-        for (int i = handPile.Count - 1; i >= 0; i--)
+        for (int i = playPile.Count - 1; i >= 0; i--)
+        {
+            Ball ball = playPile[i];
+            playPile.RemoveAt(i);
+            discardPile.Add(ball);
+            MoveBallToPile(ball, discardPileParent);
+            if (ball.InHand)
+            {
+                ball.ToggleHand();
+            }
+            totalPoints += ball.GetPoints();
+        }
+
+        //roundPoints += ball.GetPoints();
+        /*for (int i = handPile.Count - 1; i >= 0; i--)
         {
             Ball ball = handPile[i];
             handPile.RemoveAt(i);
@@ -215,15 +224,14 @@ public class Player_Controller : MonoBehaviour
             {
                 ball.ToggleHand();
             }
-        }
-
-        play_state = PlayState.postRound;
+        }*/
         UpdatePileCounters();
+        StartRound();
     }
 
     public void StartRound()
     {
-        if (play_state != PlayState.postRound && play_state != PlayState.drawBalls)
+        if (play_state != PlayState.postRound)
             return;
 
         play_state = PlayState.drawBalls;
@@ -254,7 +262,22 @@ public class Player_Controller : MonoBehaviour
             return;
 
         ball.transform.SetParent(parent);
-        ball.transform.position = new Vector3(parent.position.x, parent.position.y + 5, parent.position.z);
+
+        int stackIndex = 0;
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform child = parent.GetChild(i);
+            if (child == ball.transform)
+                continue;
+
+            if (child.GetComponent<Ball>() != null)
+            {
+                stackIndex++;
+            }
+        }
+
+        float stackOffset = parent.position.y * (pileStackOffset * stackIndex) + 10;
+        ball.transform.position = new Vector3(parent.position.x, stackOffset, parent.position.z);
 
         ball.transform.rotation = parent.rotation;
 
