@@ -34,10 +34,16 @@ public class Roulette_Controller : MonoBehaviour
 
     private void OnPlayTriggered()
     {
+        if (roulettePart1 == null || roulettePart2 == null)
+        {
+            Debug.LogWarning("Roulette parts are not assigned on Roulette_Controller.");
+            return;
+        }
         if (spinRoutine != null)
         {
             StopCoroutine(spinRoutine);
         }
+        Debug.Log("Roulette spin triggered with force range: " + spinForceMin + " to " + spinForceMax);
 
         float minForce = Mathf.Min(spinForceMin, spinForceMax);
         float maxForce = Mathf.Max(spinForceMin, spinForceMax);
@@ -53,7 +59,7 @@ public class Roulette_Controller : MonoBehaviour
 
         float elapsed = 0f;
         float accumulatedDegrees = 0f;
-        Quaternion startRotation = roulettePart1.transform.localRotation;
+        Quaternion startRotation1 = roulettePart1.transform.localRotation;
         Quaternion startRotation2 = roulettePart2.transform.localRotation;
 
         while (elapsed < duration)
@@ -62,8 +68,8 @@ public class Roulette_Controller : MonoBehaviour
             float t = Mathf.Clamp01(elapsed / duration);
             float currentSpeed = Mathf.Lerp(startingSpeed, 0f, t);
             accumulatedDegrees += currentSpeed * Time.deltaTime;
-            roulettePart1.transform.localRotation = startRotation * Quaternion.Euler(0f, accumulatedDegrees, 0f);
-            roulettePart2.transform.localRotation = startRotation * Quaternion.Euler(0f, accumulatedDegrees, 0f);
+            roulettePart1.transform.localRotation = startRotation1 * Quaternion.Euler(0f, accumulatedDegrees, 0f);
+            roulettePart2.transform.localRotation = startRotation2 * Quaternion.Euler(0f, accumulatedDegrees, 0f);
             yield return null;
         }
 

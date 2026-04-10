@@ -27,6 +27,7 @@ public class Events : MonoBehaviour
 
     public void PlayTriggered()
     {
+        Debug.Log("Play button triggered, invoking OnPlayTriggered event.");
         OnPlayTriggered?.Invoke();
     }
 }
