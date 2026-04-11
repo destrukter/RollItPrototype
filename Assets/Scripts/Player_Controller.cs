@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine.InputSystem;
-using UnityEngine.Timeline;
 
 public class Player_Controller : MonoBehaviour
 {
@@ -29,9 +28,17 @@ public class Player_Controller : MonoBehaviour
     [SerializeField] int start_size = 20;
     [SerializeField] float playSpawnDelaySeconds = 0.15f;
     [SerializeField] float pileRandomOffsetXZ = 0.01f;
+    [SerializeField] TMP_Text roundScoreText;
 
     int totalPoints = 0;
+    int roundPoints = 0;
+    int roundRedPoints = 0;
+    int roundBluePoints = 0;
+    int roundGreenPoints = 0;
     bool isSpawningPlayBalls = false;
+    int pendingStopEvents = 0;
+    bool awaitingRoundCompletion = false;
+    Coroutine waitForRoundCompletionRoutine;
     Events subscribedEvents;
 
     public enum PlayState { drawBalls, selectBalls, playBalls, postRound }
@@ -43,6 +50,8 @@ public class Player_Controller : MonoBehaviour
         if (subscribedEvents != null)
         {
             subscribedEvents.OnBallClicked += OnBallClicked;
+            subscribedEvents.OnStopTriggered += OnStopTriggered;
+            subscribedEvents.OnPointsAwarded += OnPointsAwarded;
         }
         else
         {
@@ -58,6 +67,8 @@ public class Player_Controller : MonoBehaviour
         if (subscribedEvents != null)
         {
             subscribedEvents.OnBallClicked -= OnBallClicked;
+            subscribedEvents.OnStopTriggered -= OnStopTriggered;
+            subscribedEvents.OnPointsAwarded -= OnPointsAwarded;
         }
     }
 
@@ -66,10 +77,6 @@ public class Player_Controller : MonoBehaviour
         if (play_state == PlayState.selectBalls && IsConfirmPressed())
         {
             PlayBalls();
-        }
-        else if (play_state == PlayState.playBalls && !isSpawningPlayBalls && IsConfirmPressed())
-        {
-            PostRound();
         }
     }
 
@@ -185,10 +192,13 @@ public class Player_Controller : MonoBehaviour
             return;
 
         play_state = PlayState.playBalls;
+        pendingStopEvents = playPile.Count + 1; // one stop event per play ball + one for roulette
+        awaitingRoundCompletion = pendingStopEvents > 0;
         TriggerPlayEvent();
 
         if (playPile.Count == 0)
         {
+            TryCompleteRoundFromStopEvents();
             UpdatePileCounters();
             return;
         }
@@ -235,6 +245,36 @@ public class Player_Controller : MonoBehaviour
         isSpawningPlayBalls = false;
     }
 
+    private void OnStopTriggered()
+    {
+        if (play_state != PlayState.playBalls || !awaitingRoundCompletion)
+            return;
+
+        pendingStopEvents = Mathf.Max(0, pendingStopEvents - 1);
+        TryCompleteRoundFromStopEvents();
+    }
+
+    private void TryCompleteRoundFromStopEvents()
+    {
+        if (play_state != PlayState.playBalls || !awaitingRoundCompletion || pendingStopEvents > 0)
+            return;
+
+        awaitingRoundCompletion = false;
+        if (waitForRoundCompletionRoutine != null)
+        {
+            StopCoroutine(waitForRoundCompletionRoutine);
+        }
+        waitForRoundCompletionRoutine = StartCoroutine(FinishRoundRoutine());
+    }
+
+    private IEnumerator FinishRoundRoutine()
+    {
+        TriggerGameEndEvent();
+        yield return null; // wait for slot point calculation listeners
+        PostRound();
+        waitForRoundCompletionRoutine = null;
+    }
+
     void PostRound()
     {
         if (play_state != PlayState.playBalls)
@@ -271,13 +311,66 @@ public class Player_Controller : MonoBehaviour
         StartRound();
     }
 
+    private void TriggerGameEndEvent()
+    {
+        Events eventsInstance = ResolveEventsInstance();
+        if (eventsInstance == null)
+        {
+            Debug.LogWarning("Game end trigger requested, but no Events instance is available.");
+            return;
+        }
+
+        eventsInstance.GameEndTriggered();
+    }
+
     public void StartRound()
     {
         if (play_state != PlayState.postRound)
             return;
 
+        ResetRoundPoints();
         play_state = PlayState.drawBalls;
         DrawBalls();
+    }
+
+    private void ResetRoundPoints()
+    {
+        roundPoints = 0;
+        roundRedPoints = 0;
+        roundBluePoints = 0;
+        roundGreenPoints = 0;
+        UpdateRoundScoreText();
+    }
+
+    private void OnPointsAwarded(int points, string color)
+    {
+        if (points <= 0)
+            return;
+
+        roundPoints += points;
+
+        switch (color)
+        {
+            case "Red":
+                roundRedPoints += points;
+                break;
+            case "Green":
+                roundGreenPoints += points;
+                break;
+            default:
+                roundBluePoints += points;
+                break;
+        }
+
+        UpdateRoundScoreText();
+    }
+
+    private void UpdateRoundScoreText()
+    {
+        if (roundScoreText == null)
+            return;
+
+        roundScoreText.text = $"Round Score: {roundPoints}\nR: {roundRedPoints}  B: {roundBluePoints}  G: {roundGreenPoints}";
     }
 
     private void SpawnBallForPlay(Ball ball)
@@ -302,6 +395,8 @@ public class Player_Controller : MonoBehaviour
 
             rb.linearVelocity = direction.normalized * ball.GetLaunchVelocity();
         }
+
+        ball.MarkAsInPlay();
     }
 
     private void MoveBallToPile(Ball ball, Transform parent)

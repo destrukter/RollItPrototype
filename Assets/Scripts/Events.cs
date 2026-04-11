@@ -19,6 +19,9 @@ public class Events : MonoBehaviour
 
     public event Action<Ball> OnBallClicked;
     public event Action OnPlayTriggered;
+    public event Action OnStopTriggered;
+    public event Action OnGameEndTriggered;
+    public event Action<int, string> OnPointsAwarded;
 
     public void BallClicked(Ball ball)
     {
@@ -29,5 +32,20 @@ public class Events : MonoBehaviour
     {
         Debug.Log("Play button triggered, invoking OnPlayTriggered event.");
         OnPlayTriggered?.Invoke();
+    }
+
+    public void StopTriggered()
+    {
+        OnStopTriggered?.Invoke();
+    }
+
+    public void GameEndTriggered()
+    {
+        OnGameEndTriggered?.Invoke();
+    }
+
+    public void PointsAwarded(int amount, string color)
+    {
+        OnPointsAwarded?.Invoke(amount, color);
     }
 }
