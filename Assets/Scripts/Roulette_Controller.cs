@@ -257,6 +257,7 @@ public class Roulette_Controller : MonoBehaviour
             float currentSpeed = Mathf.Lerp(startingSpeed, 0f, t);
             accumulatedDegrees += currentSpeed * Time.deltaTime;
             roulettePart1.transform.localRotation = startRotation1 * Quaternion.Euler(0f, 0f, accumulatedDegrees);
+            roulettePart2.transform.localRotation = startRotation2 * Quaternion.Euler(0f, 0f, accumulatedDegrees);
             yield return null;
         }
 
