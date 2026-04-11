@@ -249,6 +249,7 @@ public class Roulette_Controller : MonoBehaviour
         float elapsed = 0f;
         float accumulatedDegrees = 0f;
         Quaternion startRotation1 = roulettePart1.transform.localRotation;
+        Quaternion startRotation2 = roulettePart2.transform.localRotation;
 
         while (elapsed < duration)
         {
@@ -262,6 +263,10 @@ public class Roulette_Controller : MonoBehaviour
         }
 
         spinRoutine = null;
+        if (Events.current != null)
+        {
+            Events.current.StopTriggered();
+        }
     }
 
     private static Tile.TileColor GetColorFromValue(int value)

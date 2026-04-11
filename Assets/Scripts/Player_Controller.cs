@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine.InputSystem;
-using UnityEngine.Timeline;
 
 public class Player_Controller : MonoBehaviour
 {
@@ -32,6 +31,9 @@ public class Player_Controller : MonoBehaviour
 
     int totalPoints = 0;
     bool isSpawningPlayBalls = false;
+    int pendingStopEvents = 0;
+    bool awaitingRoundCompletion = false;
+    Coroutine waitForRoundCompletionRoutine;
     Events subscribedEvents;
 
     public enum PlayState { drawBalls, selectBalls, playBalls, postRound }
@@ -43,6 +45,7 @@ public class Player_Controller : MonoBehaviour
         if (subscribedEvents != null)
         {
             subscribedEvents.OnBallClicked += OnBallClicked;
+            subscribedEvents.OnStopTriggered += OnStopTriggered;
         }
         else
         {
@@ -58,6 +61,7 @@ public class Player_Controller : MonoBehaviour
         if (subscribedEvents != null)
         {
             subscribedEvents.OnBallClicked -= OnBallClicked;
+            subscribedEvents.OnStopTriggered -= OnStopTriggered;
         }
     }
 
@@ -66,10 +70,6 @@ public class Player_Controller : MonoBehaviour
         if (play_state == PlayState.selectBalls && IsConfirmPressed())
         {
             PlayBalls();
-        }
-        else if (play_state == PlayState.playBalls && !isSpawningPlayBalls && IsConfirmPressed())
-        {
-            PostRound();
         }
     }
 
@@ -185,10 +185,13 @@ public class Player_Controller : MonoBehaviour
             return;
 
         play_state = PlayState.playBalls;
+        pendingStopEvents = playPile.Count + 1; // one stop event per play ball + one for roulette
+        awaitingRoundCompletion = pendingStopEvents > 0;
         TriggerPlayEvent();
 
         if (playPile.Count == 0)
         {
+            TryCompleteRoundFromStopEvents();
             UpdatePileCounters();
             return;
         }
@@ -235,6 +238,36 @@ public class Player_Controller : MonoBehaviour
         isSpawningPlayBalls = false;
     }
 
+    private void OnStopTriggered()
+    {
+        if (play_state != PlayState.playBalls || !awaitingRoundCompletion)
+            return;
+
+        pendingStopEvents = Mathf.Max(0, pendingStopEvents - 1);
+        TryCompleteRoundFromStopEvents();
+    }
+
+    private void TryCompleteRoundFromStopEvents()
+    {
+        if (play_state != PlayState.playBalls || !awaitingRoundCompletion || pendingStopEvents > 0)
+            return;
+
+        awaitingRoundCompletion = false;
+        if (waitForRoundCompletionRoutine != null)
+        {
+            StopCoroutine(waitForRoundCompletionRoutine);
+        }
+        waitForRoundCompletionRoutine = StartCoroutine(FinishRoundRoutine());
+    }
+
+    private IEnumerator FinishRoundRoutine()
+    {
+        TriggerGameEndEvent();
+        yield return null; // wait for slot point calculation listeners
+        PostRound();
+        waitForRoundCompletionRoutine = null;
+    }
+
     void PostRound()
     {
         if (play_state != PlayState.playBalls)
@@ -271,6 +304,18 @@ public class Player_Controller : MonoBehaviour
         StartRound();
     }
 
+    private void TriggerGameEndEvent()
+    {
+        Events eventsInstance = ResolveEventsInstance();
+        if (eventsInstance == null)
+        {
+            Debug.LogWarning("Game end trigger requested, but no Events instance is available.");
+            return;
+        }
+
+        eventsInstance.GameEndTriggered();
+    }
+
     public void StartRound()
     {
         if (play_state != PlayState.postRound)
@@ -302,6 +347,8 @@ public class Player_Controller : MonoBehaviour
 
             rb.linearVelocity = direction.normalized * ball.GetLaunchVelocity();
         }
+
+        ball.MarkAsInPlay();
     }
 
     private void MoveBallToPile(Ball ball, Transform parent)
