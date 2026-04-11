@@ -26,6 +26,7 @@ public class Player_Controller : MonoBehaviour
     [SerializeField] int num_draw = 3;
     [SerializeField] int hand_size = 5;
     [SerializeField] int play_size = 3;
+    [SerializeField] int start_size = 20;
     [SerializeField] float playSpawnDelaySeconds = 0.15f;
     [SerializeField] float pileRandomOffsetXZ = 0.01f;
 
@@ -48,7 +49,7 @@ public class Player_Controller : MonoBehaviour
             Debug.LogWarning("Player_Controller could not find an Events instance during Start.");
         }
 
-        GenerateStartingDeck(10);
+        GenerateStartingDeck(start_size);
         StartRound();
     }
 
