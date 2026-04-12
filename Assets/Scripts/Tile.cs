@@ -104,6 +104,6 @@ public class Tile : MonoBehaviour
             return;
 
         string colorKey = tileColor == TileColor.Black ? "Blue" : tileColor.ToString();
-        Events.current.PointsAwarded(ballsHere, colorKey);
+        Events.current.PointsAwarded(ballsHere*value, colorKey);
     }
 }

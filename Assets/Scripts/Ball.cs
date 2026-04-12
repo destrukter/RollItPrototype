@@ -18,7 +18,7 @@ public class Ball : MonoBehaviour
 
     private const float StopSpeedThreshold = 0.05f;
     private const float StopAngularSpeedThreshold = 0.05f;
-    private const float StopConfirmTime = 0.25f;
+    private const float StopConfirmTime = 0.05f;
 
     public BallData Data => data;
     public bool InHand => inHand;

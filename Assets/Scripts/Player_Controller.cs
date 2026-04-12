@@ -14,6 +14,10 @@ public class Player_Controller : MonoBehaviour
     [SerializeField] Transform playPileParent;
     [SerializeField] Transform discardPileParent;
     [SerializeField] Transform playOrigin;
+    
+    [SerializeField] float launchYaw = 25f;
+    [SerializeField] float launchPitch = 15f;
+
 
     List<Ball> drawPile = new List<Ball>();
     List<Ball> handPile = new List<Ball>();
@@ -60,6 +64,7 @@ public class Player_Controller : MonoBehaviour
 
         GenerateStartingDeck(start_size);
         StartRound();
+        ResetRoundPoints();
     }
 
     private void OnDestroy()
@@ -188,6 +193,7 @@ public class Player_Controller : MonoBehaviour
 
     public void PlayBalls()
     {
+        ResetRoundPoints();
         if (play_state != PlayState.selectBalls)
             return;
 
@@ -328,7 +334,6 @@ public class Player_Controller : MonoBehaviour
         if (play_state != PlayState.postRound)
             return;
 
-        ResetRoundPoints();
         play_state = PlayState.drawBalls;
         DrawBalls();
     }
@@ -361,7 +366,7 @@ public class Player_Controller : MonoBehaviour
                 roundBluePoints += points;
                 break;
         }
-
+        //ResetRoundPoints();
         UpdateRoundScoreText();
     }
 
@@ -385,8 +390,8 @@ public class Player_Controller : MonoBehaviour
         Rigidbody rb = ball.GetComponent<Rigidbody>();
         if (rb != null)
         {
-            float randomYaw = Random.Range(-25f, 25f);   // left/right
-            float randomPitch = Random.Range(-15f, 15f); // up/down
+            float randomYaw = Random.Range(-launchYaw, launchYaw);   // left/right
+            float randomPitch = Random.Range(-launchPitch, launchPitch); // up/down
 
             Quaternion yawRotation = Quaternion.AngleAxis(randomYaw, playOrigin.up);
             Quaternion pitchRotation = Quaternion.AngleAxis(randomPitch, playOrigin.right);

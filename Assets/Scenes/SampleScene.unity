@@ -237,7 +237,7 @@ Transform:
   m_GameObject: {fileID: 48350975}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 0.5410004, y: 1.0992223, z: 1.3250021}
+  m_LocalPosition: {x: 0.5410004, y: 1.0992223, z: 1.809}
   m_LocalScale: {x: 0.11111111, y: 0.11111111, z: 0.1111111}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2780,6 +2780,8 @@ MonoBehaviour:
   playPileParent: {fileID: 17586642}
   discardPileParent: {fileID: 2145746362}
   playOrigin: {fileID: 48350976}
+  launchYaw: 25
+  launchPitch: 15
   num_draw: 3
   hand_size: 5
   play_size: 3
